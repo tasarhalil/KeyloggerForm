@@ -17,5 +17,28 @@ Amaç: Kullanıcının yaptığı tuşlamaları kaydetmek, hangi pencere/dosya �
     - **Log Dosyasını Temizle**  
     - **Çıkış Yap** seçenekleri kullanılabilir.  
 
+---
 
+## ⚠️ Uyarı ve Kullanım Koşulları
+
+- Bu proje **yalnızca eğitim, araştırma ve siber güvenlik farkındalığı** amacıyla geliştirilmiştir.  
+- **Kötüye kullanım kesinlikle yasaktır.** Başkalarının izni olmadan bilgisayarlarında çalıştırmak, kişisel verilerini toplamak veya gizliliklerini ihlal etmek **suç teşkil eder**.  
+- Geliştirici, bu yazılımın **izinsiz veya yasa dışı kullanımından sorumlu değildir**.  
+- Lütfen yalnızca **kendi bilgisayarınızda ve kendi verileriniz üzerinde** test edin.  
+
+---
+
+## 📚 Önerilen Kullanım Alanları
+
+- Klavye girişlerinin nasıl işlendiğini öğrenmek  
+- Antivirüs yazılımlarının keylogger’ları nasıl tespit ettiğini anlamak  
+- Güvenlik araştırmalarında “zararlı yazılım davranışlarını” analiz etmek  
+
+---
+
+## 🛠️ Gereksinimler
+
+- Visual Studio 2022  
+- .NET Framework / .NET 6+  
+- Windows işletim sistemi  
 
