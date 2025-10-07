@@ -28,7 +28,14 @@
         /// </summary>
         private void InitializeComponent()
         {
+            components = new System.ComponentModel.Container();
+            timerMail = new System.Windows.Forms.Timer(components);
             SuspendLayout();
+            // 
+            // timerMail
+            // 
+            timerMail.Interval = 3600000;
+            timerMail.Tick += timerMail_Tick;
             // 
             // Form1
             // 
@@ -42,5 +49,7 @@
         }
 
         #endregion
+
+        private System.Windows.Forms.Timer timerMail;
     }
 }
