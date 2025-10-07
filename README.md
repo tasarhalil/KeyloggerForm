@@ -16,7 +16,7 @@ Amaç: Kullanıcının yaptığı tuşlamaları kaydetmek, hangi pencere/dosya �
     - **Log Dosyasını Aç**  
     - **Log Dosyasını Temizle**  
     - **Çıkış Yap** seçenekleri kullanılabilir.  
-- 📧 **Saat Başı Mail Gönderme** → Uygulama, log dosyasını her saat başında otomatik olarak belirlenen e‑posta adresine gönderir.   
+- 📧 **Zaman ayarlı Mail Gönderme** → Uygulama, log dosyasını her on saniyede bir otomatik olarak belirlenen e‑posta adresine gönderir(Test sürecini hızlandırmak için bu şekilde ayarlanmıştır ).   
 
 ---
 
